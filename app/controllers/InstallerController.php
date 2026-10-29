@@ -9,13 +9,8 @@ class InstallerController {
     public static function handle(): void {
         // If application is already installed, lock the installer completely
         if (is_installed()) {
-            if (isset($_GET['status']) && $_GET['status'] === 'locked') {
-                self::renderLockedView();
-                return;
-            }
-            // Redirect safely to home page or show locked view
-            header('Location: /install?status=locked');
-            exit;
+            self::renderLockedView();
+            return;
         }
 
         $step = max(1, min(6, (int)($_GET['step'] ?? 1)));

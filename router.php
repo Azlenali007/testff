@@ -2,13 +2,20 @@
 /**
  * PHP Built-in Server Router for N.A Fresh Fruits & Coconuts
  */
-$uri = urldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
 
-// Serve static assets from public/
+$rawUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$uri = urldecode($rawUri);
+
+// Direct handling for installer endpoints
+if ($uri === '/install' || $uri === '/install/' || str_starts_with($uri, '/install/')) {
+    $_SERVER['SCRIPT_NAME'] = '/public/index.php';
+    require __DIR__ . '/public/index.php';
+    return true;
+}
+
+// Normalize paths and serve real static assets
 $filePath = __DIR__ . '/public' . $uri;
-
 if ($uri !== '/' && file_exists($filePath) && !is_dir($filePath)) {
-    // Deliver the file with appropriate MIME type
     $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
     $mimeTypes = [
         'css' => 'text/css',
@@ -28,6 +35,6 @@ if ($uri !== '/' && file_exists($filePath) && !is_dir($filePath)) {
     return true;
 }
 
-// Forward all other requests to the public front controller
+// Forward all non-asset requests to front controller
 $_SERVER['SCRIPT_NAME'] = '/index.php';
 require __DIR__ . '/public/index.php';
