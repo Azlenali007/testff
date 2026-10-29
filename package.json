@@ -1,0 +1,12 @@
+{
+  "name": "na-fresh-fruits-and-coconuts",
+  "private": true,
+  "version": "1.0.0",
+  "description": "N.A Fresh Fruits & Coconuts - PHP 8.2 and MySQL Store and Admin Portal",
+  "scripts": {
+    "dev": "bash run-dev.sh",
+    "build": "bash build.sh",
+    "preview": "bash run-dev.sh",
+    "lint": "php -l public/index.php"
+  }
+}
