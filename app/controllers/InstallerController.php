@@ -186,20 +186,24 @@ class InstallerController {
         $error = null;
         $existingTables = [];
         $isInitialized = false;
+        $connectionError = null;
 
         try {
             $pdo = Database::getConnection();
             $stmt = $pdo->query("SHOW TABLES");
             $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
             $existingTables = $tables;
-            $isInitialized = in_array('products', $tables) && in_array('orders', $tables) && in_array('admins', $tables);
+            $requiredTables = ['products', 'orders', 'admins', 'settings', 'order_items', 'customers'];
+            $matching = array_intersect($requiredTables, $tables);
+            $isInitialized = (count($matching) === count($requiredTables));
         } catch (Exception $e) {
-            header('Location: /install?step=2');
-            exit;
+            $connectionError = Database::sanitizeErrorMessage($e->getMessage());
         }
 
         if ($method === 'POST') {
-            if (!verify_csrf_token($_POST[CSRF_TOKEN_KEY] ?? '')) {
+            if ($connectionError) {
+                $error = "Cannot connect to configured database: " . $connectionError . ". Please return to Step 2 and verify credentials.";
+            } elseif (!verify_csrf_token($_POST[CSRF_TOKEN_KEY] ?? '')) {
                 $error = "Session token expired. Please try again.";
             } else {
                 try {
@@ -208,9 +212,23 @@ class InstallerController {
                         throw new Exception("Schema file database/schema.sql not found.");
                     }
                     $sql = file_get_contents($schemaFile);
-                    $pdo->exec($sql);
+                    
+                    // Split into discrete SQL statements
+                    $statements = self::splitSqlStatements($sql);
 
-                    // Seed default product if not present
+                    foreach ($statements as $stmtSql) {
+                        $stmtSql = trim($stmtSql);
+                        if (empty($stmtSql)) continue;
+
+                        // Security & hosting compatibility: Never execute CREATE DATABASE or USE statements
+                        if (preg_match('/^\s*(CREATE\s+DATABASE|USE\s+)/i', $stmtSql)) {
+                            continue;
+                        }
+
+                        $pdo->exec($stmtSql);
+                    }
+
+                    // Seed default product if not present (non-destructive)
                     $stmtCheckProd = $pdo->query("SELECT COUNT(*) FROM `products` WHERE `slug` = 'fresh-coconut-water'");
                     if ($stmtCheckProd->fetchColumn() == 0) {
                         $gallery = json_encode([
@@ -237,15 +255,54 @@ class InstallerController {
                         ]);
                     }
 
+                    // Verify required tables exist
+                    $stmtVerify = $pdo->query("SHOW TABLES");
+                    $postTables = $stmtVerify->fetchAll(PDO::FETCH_COLUMN);
+                    $missingTables = array_diff(['products', 'orders', 'admins', 'settings'], $postTables);
+                    if (!empty($missingTables)) {
+                        throw new Exception("Required tables could not be verified: " . implode(', ', $missingTables));
+                    }
+
                     header('Location: /install?step=4');
                     exit;
+                } catch (PDOException $e) {
+                    $errCode = (int)$e->getCode();
+                    $errMsg = $e->getMessage();
+                    if ($errCode === 1044 || $errCode === 1142 || str_contains($errMsg, '1044') || str_contains($errMsg, '1142') || str_contains($errMsg, 'Access denied')) {
+                        $error = "Hosting Permission Error (1044/1142): MySQL user '" . e(DB_USER) . "' does not have permission to CREATE or ALTER tables in database '" . e(DB_NAME) . "'.\n\n"
+                               . "Action Required in cPanel:\n"
+                               . "1. In cPanel, navigate to 'MySQL Databases'.\n"
+                               . "2. Scroll down to the 'Add User to Database' section.\n"
+                               . "3. Select User: '" . e(DB_USER) . "' and Database: '" . e(DB_NAME) . "'.\n"
+                               . "4. Click 'Add', tick the 'ALL PRIVILEGES' checkbox, and click 'Make Changes'.\n"
+                               . "5. Return here and click 'Create Tables & Continue'.";
+                    } else {
+                        $error = "Database initialization error: " . Database::sanitizeErrorMessage($errMsg);
+                    }
                 } catch (Exception $e) {
-                    $error = "Database initialization error: " . $e->getMessage();
+                    $error = "Database initialization error: " . Database::sanitizeErrorMessage($e->getMessage());
                 }
             }
         }
 
         require __DIR__ . '/../views/installer/step3.php';
+    }
+
+    private static function splitSqlStatements(string $sql): array {
+        // Strip block comments
+        $sql = preg_replace('!/\*.*?\*/!s', '', $sql);
+        // Strip line comments
+        $sql = preg_replace('/^--.*?$/m', '', $sql);
+
+        $tokens = explode(';', $sql);
+        $clean = [];
+        foreach ($tokens as $t) {
+            $t = trim($t);
+            if (!empty($t)) {
+                $clean[] = $t;
+            }
+        }
+        return $clean;
     }
 
     private static function step4Admin(string $method): void {

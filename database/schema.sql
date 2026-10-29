@@ -1,9 +1,6 @@
 -- MySQL Database Schema for N.A Fresh Fruits & Coconuts
 -- Production-ready, fully normalized, strict constraints, transactions-ready
 
-CREATE DATABASE IF NOT EXISTS `na_coconuts` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE `na_coconuts`;
-
 -- 1. Admin Users Table
 CREATE TABLE IF NOT EXISTS `admins` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

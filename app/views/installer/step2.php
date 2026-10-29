@@ -55,9 +55,12 @@ ob_start();
                 name="database" 
                 value="<?= e($database) ?>" 
                 required 
-                placeholder="na_coconuts"
+                placeholder="e.g. your_cpanel_dbname"
                 class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-brand-600 focus:outline-none"
             >
+            <p class="text-[10px] text-gray-400 mt-1">
+                On cPanel/shared hosting, enter the full database name created in your control panel (e.g., <code class="font-mono">user_dbname</code>).
+            </p>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -68,6 +71,7 @@ ob_start();
                     name="username" 
                     value="<?= e($username) ?>" 
                     required 
+                    placeholder="e.g. your_cpanel_dbuser"
                     class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-brand-600 focus:outline-none"
                 >
             </div>
@@ -91,10 +95,12 @@ ob_start();
                     type="checkbox" 
                     name="create_db" 
                     value="1" 
-                    checked 
                     class="w-4 h-4 text-brand-600 rounded-sm focus:ring-brand-500"
                 >
-                <span class="text-gray-700 font-medium">Attempt to create database automatically if it does not exist</span>
+                <div>
+                    <span class="text-gray-700 font-medium block">Attempt to create database automatically if it does not exist</span>
+                    <span class="text-[10px] text-gray-400 block">Leave unchecked if your database was already created in cPanel / hosting control panel.</span>
+                </div>
             </label>
         </div>
 
