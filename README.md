@@ -14,6 +14,14 @@ Production-oriented PHP 8.2+ and MySQL web application for **N.A Fresh Fruits & 
 - **Fixed Mobile Bottom Navigation**: Always-visible viewport-fixed bottom navigation (`Home`, `Shop`, `Cart` with live counter badge, `Profile`/`Track Orders`) with safe-area insets.
 - **Order Tracking & Confirmation**: Displays unique order number (e.g., `#NA1024`), visual preparation/delivery timeline, estimated delivery times, and status logs.
 
+### In-Browser Web Installer (`/install`)
+- **Step 1 — System Requirements**: Real-time checks for PHP 8.2+, PDO MySQL, Mbstring, cURL, GD image extension, and writable directories (`storage/`, `app/config/`, `public/assets/uploads/`).
+- **Step 2 — Database Configuration**: Interactive PDO host, port, db name, and user credential testing with non-destructive connection verification.
+- **Step 3 — Table Initialization**: Safe schema importer from `database/schema.sql` that avoids overwriting existing production records.
+- **Step 4 — Initial Administrator Account**: Form to securely create the primary store manager with bcrypt password hashing.
+- **Step 5 — Business Settings**: Configure store name, currency, starting coconut price, stock, delivery fees, and operating hours.
+- **Step 6 — Final Validation & Security Lock**: Creates `storage/installed.lock` to permanently disable the installer and prevent re-initialization.
+
 ### Secure Store Admin Panel (`/admin`)
 - **Protected Access**: Throttled login protection (5 attempts / 15 minutes), bcrypt password verification, CSRF token validation, session ID regeneration upon login, and secure cookies.
 - **Operational Dashboard**: Live database metrics for Orders Today, Sales Today (excluding cancellations), Pending, Confirmed, Delivered, and Cancelled counts, plus a 7-day sales trend powered by Chart.js.

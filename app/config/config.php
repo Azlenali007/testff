@@ -7,7 +7,7 @@
 // Timezone (Indian Standard Time matching the business context)
 date_default_timezone_set('Asia/Kolkata');
 
-// Error reporting for production environment
+// Error reporting
 error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED);
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
@@ -18,12 +18,25 @@ if (!defined('APP_NAME')) define('APP_NAME', 'N.A Fresh Fruits & Coconuts');
 if (!defined('APP_URL')) define('APP_URL', '');
 if (!defined('CURRENCY_SYMBOL')) define('CURRENCY_SYMBOL', '₹');
 
-// Database configuration
-if (!defined('DB_HOST')) define('DB_HOST', getenv('DB_HOST') ?: '127.0.0.1');
-if (!defined('DB_PORT')) define('DB_PORT', getenv('DB_PORT') ?: '3306');
-if (!defined('DB_NAME')) define('DB_NAME', getenv('DB_NAME') ?: 'na_coconuts');
-if (!defined('DB_USER')) define('DB_USER', getenv('DB_USER') ?: 'na_user');
-if (!defined('DB_PASS')) define('DB_PASS', getenv('DB_PASS') ?: 'na_pass123');
+// Installation Lock File Path
+if (!defined('INSTALL_LOCK_FILE')) {
+    define('INSTALL_LOCK_FILE', __DIR__ . '/../../storage/installed.lock');
+}
+
+function is_installed(): bool {
+    return file_exists(INSTALL_LOCK_FILE);
+}
+
+// Database configuration loading
+$dbConfigFile = __DIR__ . '/db_config.php';
+$loadedDbConfig = file_exists($dbConfigFile) ? require $dbConfigFile : [];
+
+if (!defined('DB_HOST')) define('DB_HOST', $loadedDbConfig['host'] ?? (getenv('DB_HOST') ?: '127.0.0.1'));
+if (!defined('DB_PORT')) define('DB_PORT', $loadedDbConfig['port'] ?? (getenv('DB_PORT') ?: '3306'));
+if (!defined('DB_NAME')) define('DB_NAME', $loadedDbConfig['database'] ?? (getenv('DB_NAME') ?: 'na_coconuts'));
+if (!defined('DB_USER')) define('DB_USER', $loadedDbConfig['username'] ?? (getenv('DB_USER') ?: 'na_user'));
+if (!defined('DB_PASS')) define('DB_PASS', $loadedDbConfig['password'] ?? (getenv('DB_PASS') ?: 'na_pass123'));
+if (!defined('DB_PREFIX')) define('DB_PREFIX', $loadedDbConfig['prefix'] ?? '');
 
 // Security settings
 define('SESSION_LIFETIME', 86400 * 7); // 7 days
